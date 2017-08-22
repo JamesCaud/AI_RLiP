@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from EpsilonGreedy import runExp as runExpEps
 
 class MyBandit:
     def __init__(self, m):
@@ -15,18 +16,19 @@ class MyBandit:
         # (previous mean * % of new mean) + (new val * % of new mean)
         self.mean = ((1 - 1.0/self.N) * self.mean) + (1.0/self.N * x)
         
-def runExp(m1, m2, m3, epsilon, N):
+def ubc(mean, n, nj):
+    if nj == 0:
+        return float('inf')
+    return mean + np.sqrt(2*np.log(n) / nj)
+        
+def runExp(m1, m2, m3, N, upperLimit = 10):
     bandits = [MyBandit(m1), MyBandit(m2), MyBandit(m3)]
     
     data = np.empty(N)
-    
+
+    # different
     for i in range(N):
-        # epsilon greedy
-        p = np.random.random()
-        if p < epsilon:
-            j = np.random.choice(3)
-        else:
-            j = np.argmax([b.mean for b in bandits])
+        j = np.argmax([ucb(b.mean, i+1, b.N) for b in bandits])
         x = bandits[j].pull()
         bandits[j].update(x)
         
@@ -42,27 +44,25 @@ def runExp(m1, m2, m3, epsilon, N):
     plt.xscale('log')
     plt.show()
     
-    for b in bandits:
-        print (b.mean)
+    # for b in bandits:
+    #    print (b.mean)
         
     return cumAvg
     
 if __name__ == '__main__':
-    c_1 = runExp(1.0, 2.0, 3.0, .1, 100000)
-    c_05 = runExp(1.0, 2.0, 3.0, .05, 100000) 
-    c_01 = runExp(1.0, 2.0, 3.0, .01, 100000)
-    
-    # log scale plotting
-    plt.plot(c_1, label='eps = .1')
-    plt.plot(c_05, label='eps = .05')
-    plt.plot(c_01, label='eps = .01')
-    plt.legend()
-    plt.xscale('log')
-    plt.show()
-    
-    # linear plot
-    plt.plot(c_1, label='eps = 0.1')
-    plt.plot(c_05, label='eps = 0.05')
-    plt.plot(c_01, label='eps = 0.01')
-    plt.legend()
-    plt.show()
+  c_1 = runExpEps(1.0, 2.0, 3.0, 0.1, 100000)
+  ucb = runExp(1.0, 2.0, 3.0, 100000)
+
+  # log scale plot
+  plt.plot(c_1, label='eps = 0.1')
+  plt.plot(ucb, label='ucb')
+  plt.legend()
+  plt.xscale('log')
+  plt.show()
+
+
+  # linear plot
+  plt.plot(c_1, label='eps = 0.1')
+  plt.plot(ucb, label='ucb')
+  plt.legend()
+  plt.show()
